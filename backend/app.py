@@ -94,3 +94,52 @@ def seed():
     conn.close()
 
     return {"status": "seeded"}
+
+@app.get("/ai-search")
+def ai_search(q: str):
+    q = q.lower()
+
+    conn = get_conn()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT title, location, dates, price, source_url
+        FROM listings
+        ORDER BY id DESC
+        LIMIT 100
+    """)
+
+    rows = cur.fetchall()
+
+    results = []
+
+    for r in rows:
+        text = " ".join([str(x).lower() for x in r if x])
+
+        score = 0
+
+        # VERY SIMPLE "AI" scoring layer (v1)
+        if any(word in text for word in q.split()):
+            score += 1
+
+        if "greece" in q and "greece" in text:
+            score += 3
+
+        if "calm" in q and "party" not in text:
+            score += 2
+
+        if "budget" in q:
+            score += 1
+
+        results.append({
+            "title": r[0],
+            "location": r[1],
+            "dates": r[2],
+            "price": r[3],
+            "url": r[4],
+            "score": score
+        })
+
+    results.sort(key=lambda x: x["score"], reverse=True)
+
+    return results
