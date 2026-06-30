@@ -143,3 +143,45 @@ def ai_search(q: str):
     results.sort(key=lambda x: x["score"], reverse=True)
 
     return results
+
+
+from openai import OpenAI
+import os
+import json
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+@app.post("/ai-parse")
+def ai_parse(payload: dict):
+    user_query = payload.get("q", "")
+
+    prompt = f"""
+You are a travel planner AI.
+
+Extract structured data from user query.
+
+Return ONLY valid JSON.
+
+Fields:
+- location (string or null)
+- budget (number or null)
+- duration_days (number or null)
+- vibe (string: calm / party / family / adventure / luxury or null)
+
+User query:
+{user_query}
+"""
+
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "user", "content": prompt}
+        ]
+    )
+
+    text = response.choices[0].message.content
+
+    try:
+        return json.loads(text)
+    except:
+        return {"error": "invalid_json", "raw": text}
