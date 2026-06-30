@@ -145,43 +145,56 @@ def ai_search(q: str):
     return results
 
 
-from openai import OpenAI
+from google import genai
 import os
 import json
+import re
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = genai.Client(
+    api_key=os.getenv("OPENAI_API_KEY")
+)
 
 @app.post("/ai-parse")
 def ai_parse(payload: dict):
-    user_query = payload.get("q", "")
+    try:
+        user_query = payload.get("q", "")
 
-    prompt = f"""
-You are a travel planner AI.
-
-Extract structured data from user query.
+        prompt = f"""
+Extract information from the following sailing trip request.
 
 Return ONLY valid JSON.
 
-Fields:
-- location (string or null)
-- budget (number or null)
-- duration_days (number or null)
-- vibe (string: calm / party / family / adventure / luxury or null)
+Schema:
 
-User query:
+{{
+  "location": string|null,
+  "budget": number|null,
+  "duration_days": number|null,
+  "vibe": string|null
+}}
+
+User:
 {user_query}
 """
 
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "user", "content": prompt}
-        ]
-    )
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt
+        )
 
-    text = response.choices[0].message.content
+        text = response.text.strip()
 
-    try:
-        return json.loads(text)
-    except:
-        return {"error": "invalid_json", "raw": text}
+        match = re.search(r"\{.*\}", text, re.DOTALL)
+
+        if not match:
+            return {
+                "error": "No JSON returned",
+                "raw": text
+            }
+
+        return json.loads(match.group())
+
+    except Exception as e:
+        return {
+            "error": str(e)
+        }
