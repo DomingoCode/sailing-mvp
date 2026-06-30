@@ -110,7 +110,13 @@
 <p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>return;</span></p>
 <p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
 <p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>const res = await fetch(API + “/ai-search?q=" + encodeURIComponent(q));</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>const res = await fetch(API + "/search-ai", {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>method: "POST",</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>headers: {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>"Content-Type": "application/json"</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>},</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>body: JSON.stringify({ q })</span></p>
+<p class="p1"><span class="s1">});</span></p>
 <p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>const data = await res.json();</span></p>
 <p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>render(data);</span></p>
 <p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>

@@ -198,3 +198,65 @@ User:
         return {
             "error": str(e)
         }
+
+@app.post("/search-ai")
+def search_ai(payload: dict):
+    q = payload.get("q", "")
+
+    # 1. AI parse
+    parsed = ai_parse({"q": q})
+
+    location = parsed.get("location")
+    budget = parsed.get("budget")
+    duration = parsed.get("duration_days")
+    vibe = parsed.get("vibe")
+
+    conn = get_conn()
+    cur = conn.cursor()
+
+    # 2. базовый SQL (простая фильтрация MVP уровня)
+    query = """
+        SELECT title, location, dates, price, source_url
+        FROM listings
+        WHERE 1=1
+    """
+
+    params = []
+
+    if location:
+        query += " AND LOWER(location) LIKE %s"
+        params.append(f"%{location.lower()}%")
+
+    if budget:
+        query += " AND CAST(price AS INTEGER) <= %s"
+        params.append(budget)
+
+    cur.execute(query, params)
+    rows = cur.fetchall()
+
+    # 3. ranking (очень простой MVP score)
+    results = []
+
+    for r in rows:
+        score = 0
+
+        text = " ".join([str(x).lower() for x in r if x])
+
+        if location and location.lower() in text:
+            score += 3
+
+        if vibe and vibe.lower() in text:
+            score += 2
+
+        results.append({
+            "title": r[0],
+            "location": r[1],
+            "dates": r[2],
+            "price": r[3],
+            "url": r[4],
+            "score": score
+        })
+
+    results.sort(key=lambda x: x["score"], reverse=True)
+
+    return results
