@@ -76,3 +76,21 @@ def search(q: str):
         }
         for r in rows
     ]
+
+@app.post("/seed")
+def seed():
+    conn = get_conn()
+    cur = conn.cursor()
+
+    cur.execute("""
+        INSERT INTO listings (title, location, dates, price, source_url)
+        VALUES
+        ('Sailing Greece Adventure', 'Greece', 'July 10-17', '600€', 'https://example.com/1'),
+        ('Croatia Catamaran Trip', 'Croatia', 'August 1-8', '750€', 'https://example.com/2')
+    """)
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return {"status": "seeded"}
