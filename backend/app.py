@@ -77,7 +77,7 @@ def search(q: str):
         for r in rows
     ]
 
-@app.post("/seed")
+@app.get("/seed")
 def seed():
     conn = get_conn()
     cur = conn.cursor()
